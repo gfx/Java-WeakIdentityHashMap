@@ -1,0 +1,98 @@
+final REPOSITORY_URL = 'https://github.com/gfx/Java-WeakIdentityHashMap'
+
+final GROUP_ID = 'com.github.gfx.util'
+final ARTIFACT_ID = 'weak-identity-hash-map'
+final VERSION = '1.0.0'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.+'
+    }
+}
+
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'nexus'
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+dependencies {
+    testCompile "org.spockframework:spock-core:+"
+}
+
+
+// artifact configurations
+
+String git(String command) {
+    println "git $command"
+    def process = ["sh", "-c", "cd ${project.rootDir} ; git $command"].execute()
+    if (process.waitFor() != 0) {
+        throw new GradleException(process.err.text)
+    }
+    return process.in.text
+
+}
+
+task('releng') {
+    description 'release engineering'
+    doLast {
+        def gitStatus = git("status --porcelain")
+        if (gitStatus.trim()) {
+            throw new GradleException("Changes found:\n$gitStatus")
+        }
+
+        println git("tag v$VERSION")
+        println git("push origin v$VERSION")
+    }
+}
+
+configurations {
+    mavenDeployer
+}
+
+artifacts {
+    archives jar
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        pom.groupId = GROUP_ID
+        pom.artifactId = ARTIFACT_ID
+        pom.version = VERSION
+    }
+}
+
+modifyPom {
+    project {
+        name 'WeakIdentityHashMap'
+        description 'A combination of WeakHashMap+IdentityHashMap'
+        url REPOSITORY_URL
+        inceptionYear '2014'
+
+        scm {
+            url REPOSITORY_URL
+        }
+
+        licenses {
+            license {
+                name 'The Apache Software License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                distribution 'repo'
+            }
+        }
+
+        developers {
+            developer {
+                id 'gfx'
+                name 'FUJI Goro'
+                email 'g.psy.va@gmail.com'
+            }
+        }
+    }
+}
