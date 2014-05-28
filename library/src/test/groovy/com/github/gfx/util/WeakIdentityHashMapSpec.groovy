@@ -28,7 +28,9 @@ public class WeakIdentityHashMapSpec extends Specification {
     }
 
     def "new"() {
-        expect: map.size() == 0
+        expect:
+        map.size() == 0
+        map.isEmpty()
     }
 
     def "put/get"() {
@@ -39,6 +41,15 @@ public class WeakIdentityHashMapSpec extends Specification {
 
         then:
         map.get(foo) == "bar"
+    }
+
+    def "isEmpty"() {
+        when:
+        def foo = new Foo()
+        map.put(foo, "bar")
+
+        then:
+        !map.isEmpty()
     }
 
     def "weakness"() {
