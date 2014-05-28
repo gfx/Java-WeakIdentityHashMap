@@ -46,9 +46,14 @@ task('releng') {
         if (gitStatus.trim()) {
             throw new GradleException("Changes found:\n$gitStatus")
         }
+        def currentBranch = git("rev-parse --abbrev-ref HEAD").trim()
+        if (currentBranch != "master") {
+            thorw new GradleException("Not on the master branch")
+        }
 
         println git("tag v$VERSION")
         println git("push origin v$VERSION")
+        println git("push origin master")
     }
 }
 
