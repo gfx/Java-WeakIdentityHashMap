@@ -10,12 +10,16 @@ buildscript {
     }
     dependencies {
         classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.+'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:0.+'
     }
 }
 
 
 apply plugin: 'java'
 apply plugin: 'groovy'
+apply plugin: 'jacoco'
+apply plugin: 'coveralls'
+
 apply plugin: 'maven'
 apply plugin: 'nexus'
 
@@ -26,6 +30,15 @@ dependencies {
     testCompile "org.spockframework:spock-core:+"
 }
 
+jacoco {
+    toolVersion '0.7.+'
+}
+jacocoTestReport {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
+}
 
 // artifact configurations
 
