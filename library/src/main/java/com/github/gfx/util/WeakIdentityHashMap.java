@@ -119,7 +119,10 @@ public class WeakIdentityHashMap<K, V> implements Map<K, V> {
     }
 
     public void putAll(Map t) {
-        throw new UnsupportedOperationException();
+        reap();
+        for (Object entry : t.entrySet()) {
+            put(((Entry<K, V>)entry).getKey(), ((Entry<K, V>)entry).getValue());
+        }
     }
 
     public V remove(Object key) {

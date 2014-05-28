@@ -22,14 +22,24 @@ public class WeakIdentityHashMapSpec extends Specification {
         }
     }
 
-    Map<Foo, String> map;
+    Map<Foo, String> emptyMap
+    Map<Foo, String> map
+    Foo foo
+    Foo bar
     void setup() {
-        map = new WeakIdentityHashMap<Foo, String>()
+        emptyMap = new WeakIdentityHashMap<>()
+        map = new WeakIdentityHashMap<>()
+        foo = new Foo()
+        bar = new Foo()
+        map.put(foo, "aaa")
+        map.put(bar, "bbb")
     }
 
     def "new"() {
-        expect:
-        map.size() == 0
+        when:
+        map = new WeakIdentityHashMap<>()
+
+        then:
         map.isEmpty()
     }
 
@@ -41,25 +51,58 @@ public class WeakIdentityHashMapSpec extends Specification {
 
         then:
         map.get(foo) == "bar"
+        map.get(new Foo()) == null
+    }
+
+    def "putAll"() {
+        when:
+        def baz = new Foo()
+        def bax = new Foo()
+        def other = new IdentityHashMap<Foo, String>()
+        other.put(baz, "ccc")
+        other.put(bax, "ddd")
+        map.putAll(other)
+        System.gc()
+
+        then:
+        map.get(foo) == "aaa"
+        map.get(bar) == "bbb"
+        map.get(baz) == "ccc"
+        map.get(bax) == "ddd"
+    }
+
+    def "equals for identity"() {
+        expect:
+        map.equals(map)
+        !map.equals(emptyMap)
+    }
+
+    def "hashCode for identity"() {
+        expect:
+        map.hashCode() == map.hashCode()
+        emptyMap.hashCode() == emptyMap.hashCode()
+    }
+
+    def "size"() {
+        expect:
+        emptyMap.size() == 0
+        map.size() == 2
     }
 
     def "isEmpty"() {
-        when:
-        def foo = new Foo()
-        map.put(foo, "bar")
-
-        then:
+        expect:
+        emptyMap.isEmpty()
         !map.isEmpty()
     }
 
     def "weakness"() {
         when:
-        map.put(new Foo(), "aaa")
-        map.put(new Foo(), "bbb")
+        map.put(new Foo(), "xxx")
+        map.put(new Foo(), "yyy")
         System.gc()
 
         then:
-        map.size() == 0
+        map.size() == 2
     }
 
     def "identity"() {
@@ -73,31 +116,65 @@ public class WeakIdentityHashMapSpec extends Specification {
         map.get(foo) == "bar"
     }
 
-    def "Map interface"() {
+    def "keySet"() {
         when:
-        def foo = new Foo()
-        def bar = new Foo()
-        map.put(foo, "aaa")
-        map.put(bar, "bbb")
         System.gc()
 
         then:
-        map.size() == 2
         map.keySet().containsAll([foo, bar])
+    }
+
+    def "values"() {
+        when:
+        System.gc()
+
+        then:
         map.values().sort() == ["aaa", "bbb"]
     }
 
     def "clear"() {
         when:
-        def foo = new Foo()
-        def bar = new Foo()
-        map.put(foo, "aaa")
-        map.put(bar, "bbb")
         map.clear()
 
         then:
         map.size() == 0
         map.get(foo) == null
         map.get(bar) == null
+    }
+
+    def "containsKey"() {
+        expect:
+        map.containsKey(foo)
+        map.containsKey(bar)
+        !map.containsKey(new Foo())
+    }
+
+    def "containsValue"() {
+        expect:
+        map.containsValue("aaa")
+        !map.containsValue("ccc")
+        !map.containsValue(foo)
+    }
+
+
+    def "remove"() {
+        when:
+        map.remove(foo)
+
+        then:
+        !map.containsKey(foo)
+    }
+
+    def "Entry<>"() {
+        when:
+        def m = new IdentityHashMap<Foo, String>()
+        for (Map.Entry<Foo, String> entry : map.entrySet()) {
+            m.put(entry.key, entry.value)
+        }
+
+        then:
+        m.size() == 2
+        m.get(foo) == "aaa"
+        m.get(bar) == "bbb"
     }
 }
