@@ -47,6 +47,8 @@ import java.util.Set;
  */
 public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     private static final int DEFAULT_SIZE = 16;
+    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+
     private final ReferenceQueue<K> referenceQueue;
     int elementCount;
     Entry<K, V>[] elementData;
@@ -191,14 +193,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
      *                if the capacity is less than zero.
      */
     public WeakIdentityHashMap(int capacity) {
-        if (capacity < 0) {
-            throw new IllegalArgumentException("capacity < 0: " + capacity);
-        }
-        elementCount = 0;
-        elementData = newEntryArray(capacity == 0 ? 1 : capacity);
-        loadFactor = 7500; // Default load factor of 0.75
-        computeMaxSize();
-        referenceQueue = new ReferenceQueue<K>();
+        this(capacity, DEFAULT_LOAD_FACTOR);
     }
     /**
      * Constructs a new {@code WeakIdentityHashMap} instance with the specified capacity
@@ -584,6 +579,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         entry.value = value;
         return result;
     }
+
     private void rehash() {
         int length = elementData.length * 2;
         if (length == 0) {
