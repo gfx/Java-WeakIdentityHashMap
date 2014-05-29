@@ -2,7 +2,7 @@ final REPOSITORY_URL = 'https://github.com/gfx/Java-WeakIdentityHashMap'
 
 final GROUP_ID = 'com.github.gfx.util'
 final ARTIFACT_ID = 'weak-identity-hash-map'
-final VERSION = '1.0.0'
+final VERSION = '2.0.0'
 
 buildscript {
     repositories {
