@@ -22,12 +22,9 @@ On Xperia A / Android 4.2.2:
 
 
 ```java
+// in an Activity's onCreate()
 Map<Activity, String> map = new WeakIdentityHashMap<>();
 map.put(this, "foo");
-Activity a0 = new Activity();
-map.put(a0, "bar");
-Activity a1 = new Activity();
-map.put(a1, "baz");
 
 long t0 = System.currentTimeMillis();
 
