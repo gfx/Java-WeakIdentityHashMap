@@ -4,6 +4,15 @@
 
 ```
 dependencies {
-    compile 'com.github.gfx.util:weak-identity-hash-map:1.0.+'
+    compile 'com.github.gfx.util:weak-identity-hash-map:2.0.+'
 }
 ```
+
+## TEST COVERAGES
+
+```
+./gradlew check jacocoTestReport
+open library/build/reports/jacoco/test/html/index.html
+```
+
+

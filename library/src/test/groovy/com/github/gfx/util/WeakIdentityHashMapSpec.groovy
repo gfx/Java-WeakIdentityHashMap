@@ -33,6 +33,7 @@ public class WeakIdentityHashMapSpec extends Specification {
         bar = new Foo()
         map.put(foo, "aaa")
         map.put(bar, "bbb")
+        System.gc()
     }
 
     def "new"() {
@@ -41,6 +42,18 @@ public class WeakIdentityHashMapSpec extends Specification {
 
         then:
         map.isEmpty()
+    }
+
+    def "new with map"() {
+        when:
+        def other = new IdentityHashMap<Foo, String>()
+        other.put(foo, "aaa")
+        other.put(bar, "bbb")
+        map = new WeakIdentityHashMap<>(other)
+
+        then:
+        map.get(foo) == "aaa"
+        map.get(bar) == "bbb"
     }
 
     def "put/get"() {
@@ -126,18 +139,25 @@ public class WeakIdentityHashMapSpec extends Specification {
     }
 
     def "keySet"() {
-        when:
-        System.gc()
-
-        then:
+        expect:
         map.keySet().containsAll([foo, bar])
     }
 
-    def "values"() {
+    def "keySet().size()"() {
+        expect:
+        map.keySet().size() == 2
+    }
+
+    def "keySet().clear()"() {
         when:
-        System.gc()
+        map.clear()
 
         then:
+        map.keySet().size() == 0
+    }
+
+    def "values"() {
+        expect:
         map.values().sort() == ["aaa", "bbb"]
     }
 
@@ -184,10 +204,7 @@ public class WeakIdentityHashMapSpec extends Specification {
     }
 
     def "put/get if null key doesn't exist"() {
-        when:
-        System.gc()
-
-        then:
+        expect:
         !map.containsKey(null)
         map.get(null) == null
     }
@@ -214,6 +231,19 @@ public class WeakIdentityHashMapSpec extends Specification {
         !map.containsKey(null)
     }
 
+    def "entrySet().size()"() {
+        expect:
+        map.entrySet().size() == 2
+    }
+
+    def "entrySet().clear()"() {
+        when:
+        map.entrySet().clear()
+
+        then:
+        map.entrySet().size() == 0
+    }
+
     def "Entry<>"() {
         when:
         def m = new IdentityHashMap<Foo, String>()
@@ -227,10 +257,10 @@ public class WeakIdentityHashMapSpec extends Specification {
         m.get(bar) == "bbb"
     }
 
-    def "load many items"() {
+    def "hash conflicts"() {
         when:
         def a = new ArrayList<Foo>()
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 100000; i++) {
             def k = new Foo()
             map.put(k, "" + i)
             a.add(k)
@@ -238,6 +268,10 @@ public class WeakIdentityHashMapSpec extends Specification {
         System.gc()
 
         then:
-        map.size() == 10002
+        map.size() == 100002
+        for (Foo key : a) {
+            map.containsKey(key)
+        }
     }
+
 }
