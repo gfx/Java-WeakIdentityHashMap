@@ -122,6 +122,9 @@ public class WeakIdentityHashMapSpec extends Specification {
         map.put(new Foo(), "xxx")
         map.put(new Foo(), "yyy")
         System.gc()
+        System.gc()
+        System.gc()
+        System.gc()
 
         then:
         map.size() == 2
@@ -243,6 +246,16 @@ public class WeakIdentityHashMapSpec extends Specification {
         then:
         map.entrySet().size() == 0
     }
+
+    def "entrySet().remove(collection)"() {
+        when:
+        Set<Map.Entry<Foo, String>> set = map.entrySet()
+        set.removeAll(set);
+
+        then:
+        map.entrySet().size() == 0
+    }
+
 
     def "Entry<>"() {
         when:
