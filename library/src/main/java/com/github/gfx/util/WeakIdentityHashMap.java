@@ -50,11 +50,11 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
     private final ReferenceQueue<K> referenceQueue;
-    int elementCount;
-    Entry<K, V>[] elementData;
+    private int elementCount;
+    private Entry<K, V>[] elementData;
     private final int loadFactor;
     private int threshold;
-    volatile int modCount;
+    private volatile int modCount;
 
     private Set<K> keySet;
     private Collection<V> valuesCollection;
@@ -419,28 +419,11 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
      */
     @Override
     public V get(Object key) {
-        poll();
-        if (key != null) {
-            int index = (computeHashCode(key) & 0x7FFFFFFF) % elementData.length;
-            Entry<K, V> entry = elementData[index];
-            while (entry != null) {
-                if (key == entry.get()) {
-                    return entry.value;
-                }
-                entry = entry.next;
-            }
-            return null;
-        }
-        Entry<K, V> entry = elementData[0];
-        while (entry != null) {
-            if (entry.isNull) {
-                return entry.value;
-            }
-            entry = entry.next;
-        }
-        return null;
+        Entry<K, V> entry = getEntry(key);
+        return entry != null ? entry.value : null;
     }
-    Entry<K, V> getEntry(Object key) {
+
+    private Entry<K, V> getEntry(Object key) {
         poll();
         if (key != null) {
             int index = (computeHashCode(key) & 0x7FFFFFFF) % elementData.length;
@@ -509,13 +492,13 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         return size() == 0;
     }
     @SuppressWarnings("unchecked")
-    void poll() {
+    private void poll() {
         Entry<K, V> toRemove;
         while ((toRemove = (Entry<K, V>) referenceQueue.poll()) != null) {
             removeEntry(toRemove);
         }
     }
-    void removeEntry(Entry<K, V> toRemove) {
+    private void removeEntry(Entry<K, V> toRemove) {
         Entry<K, V> entry, last = null;
         int index = (toRemove.hash & 0x7FFFFFFF) % elementData.length;
         entry = elementData[index];
