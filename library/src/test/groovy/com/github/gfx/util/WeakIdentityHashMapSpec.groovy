@@ -357,6 +357,17 @@ public class WeakIdentityHashMapSpec extends Specification {
         !map.entrySet().remove(null)
     }
 
+    def "entrySet() throws ConcurrentModificationException"() {
+        when:
+        for (def entry : map.entrySet()) {
+            map.entrySet().remove(entry)
+        }
+
+        then:
+        thrown ConcurrentModificationException
+    }
+
+
     def "Entry<>#setValue()"() {
         setup:
         def entry = map.entrySet().iterator().next()
