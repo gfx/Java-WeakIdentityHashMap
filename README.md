@@ -2,10 +2,23 @@
 
 ## How To Use
 
-```
+In build.gradle:
+
+```gradle
 dependencies {
     compile 'com.github.gfx.util:weak-identity-hash-map:2.0.+'
 }
+```
+
+In code:
+
+```java
+Activity activity = ...;
+WeakIdentityHashMap<Activity, String> foo = new WeakIdentityHashMap<>()
+
+ // Set an activity's field.
+ // If activity is gone, this value is also gone, too.
+foo.put(activity, "my field");
 ```
 
 ## TEST COVERAGES
