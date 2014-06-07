@@ -515,9 +515,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
     }
 
     /**
-     * Returns the number of elements in this map.
-     *
-     * @return the number of elements in this map.
+     * @return <code>true</code> if this map is empty. <code>false</code> otherwise.
      */
     @Override
     public boolean isEmpty() {
@@ -652,8 +650,6 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
     }
 
     /**
-     * Returns the number of elements in this map.
-     *
      * @return the number of elements in this map.
      */
     @Override
