@@ -65,10 +65,6 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         return new Entry[size];
     }
 
-    private static <K> int computeHashCode(K key) {
-        return System.identityHashCode(key);
-    }
-
     private static final class Entry<K, V> extends WeakReference<K> implements
             Map.Entry<K, V> {
         final int hash;
@@ -83,7 +79,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         Entry(K key, V object, ReferenceQueue<K> queue) {
             super(key, queue);
             isNull = key == null;
-            hash = isNull ? 0 : computeHashCode(key);
+            hash = isNull ? 0 : System.identityHashCode(key);
             value = object;
         }
 
@@ -461,7 +457,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
     private Entry<K, V> getEntry(Object key) {
         poll();
         if (key != null) {
-            int index = (computeHashCode(key) & 0x7FFFFFFF) % elementData.length;
+            int index = (System.identityHashCode(key) & 0x7FFFFFFF) % elementData.length;
             Entry<K, V> entry = elementData[index];
             while (entry != null) {
                 if (key == entry.get()) {
@@ -572,7 +568,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         int index = 0;
         Entry<K, V> entry;
         if (key != null) {
-            index = (computeHashCode(key) & 0x7FFFFFFF) % elementData.length;
+            index = (System.identityHashCode(key) & 0x7FFFFFFF) % elementData.length;
             entry = elementData[index];
             while (entry != null && !(key == entry.get())) {
                 entry = entry.next;
@@ -587,8 +583,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             modCount++;
             if (++elementCount > threshold) {
                 rehash();
-                index = key == null ? 0 : (computeHashCode(key) & 0x7FFFFFFF)
-                        % elementData.length;
+                index = key == null ? 0 : (System.identityHashCode(key) & 0x7FFFFFFF) % elementData.length;
             }
             entry = new Entry<K, V>(key, value, referenceQueue);
             entry.next = elementData[index];
@@ -606,8 +601,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         Entry<K, V>[] newData = newEntryArray(length);
         for (Entry<K, V> entry : elementData) {
             while (entry != null) {
-                int index = entry.isNull ? 0 : (entry.hash & 0x7FFFFFFF)
-                        % length;
+                int index = entry.isNull ? 0 : (entry.hash & 0x7FFFFFFF) % length;
                 Entry<K, V> next = entry.next;
                 entry.next = newData[index];
                 newData[index] = entry;
@@ -631,7 +625,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         int index = 0;
         Entry<K, V> entry, last = null;
         if (key != null) {
-            index = (computeHashCode(key) & 0x7FFFFFFF) % elementData.length;
+            index = (System.identityHashCode(key) & 0x7FFFFFFF) % elementData.length;
             entry = elementData[index];
             while (entry != null && !(key == entry.get())) {
                 last = entry;
