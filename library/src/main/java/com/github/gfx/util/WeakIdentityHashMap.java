@@ -604,8 +604,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         assert elementData.length > 0;
         int length = elementData.length * 2;
         Entry<K, V>[] newData = newEntryArray(length);
-        for (int i = 0; i < elementData.length; i++) {
-            Entry<K, V> entry = elementData[i];
+        for (Entry<K, V> entry : elementData) {
             while (entry != null) {
                 int index = entry.isNull ? 0 : (entry.hash & 0x7FFFFFFF)
                         % length;
