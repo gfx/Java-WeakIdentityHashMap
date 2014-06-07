@@ -6,6 +6,7 @@ public class WeakIdentityHashMapSpec extends Specification {
     class Foo {
         int value = 10
 
+        @Override
         boolean equals(o) {
             if (this.is(o)) return true
             if (getClass() != o.class) return false
@@ -17,6 +18,7 @@ public class WeakIdentityHashMapSpec extends Specification {
             return true
         }
 
+        @Override
         int hashCode() {
             return value
         }
@@ -26,11 +28,14 @@ public class WeakIdentityHashMapSpec extends Specification {
     Map<Foo, String> map
     Foo foo
     Foo bar
+    Foo nonExisting
+
     void setup() {
         emptyMap = new WeakIdentityHashMap<>()
         map = new WeakIdentityHashMap<>()
         foo = new Foo()
         bar = new Foo()
+        nonExisting = new Foo()
         map.put(foo, "aaa")
         map.put(bar, "bbb")
         System.gc()
@@ -56,6 +61,32 @@ public class WeakIdentityHashMapSpec extends Specification {
         map.get(bar) == "bbb"
     }
 
+    def "new with zero capacity"() {
+        when:
+        map = new WeakIdentityHashMap<>(0)
+        map.put(foo, "aaa")
+        map.put(bar, "bbb") // will call rehash()
+
+        then:
+        map.size() == 2
+    }
+
+    def "new with negative capacity"() {
+        when:
+        map = new WeakIdentityHashMap<>(-1)
+
+        then:
+        thrown IllegalArgumentException
+    }
+
+    def "new with zero factor"() {
+        when:
+        map = new WeakIdentityHashMap<>(0, 0)
+
+        then:
+        thrown IllegalArgumentException
+    }
+
     def "put/get"() {
         when:
         def foo = new Foo()
@@ -64,7 +95,7 @@ public class WeakIdentityHashMapSpec extends Specification {
 
         then:
         map.get(foo) == "bar"
-        map.get(new Foo()) == null
+        map.get(nonExisting) == null
     }
 
     def "put again"() {
@@ -77,12 +108,14 @@ public class WeakIdentityHashMapSpec extends Specification {
     }
 
     def "putAll"() {
-        when:
+        setup:
         def baz = new Foo()
         def bax = new Foo()
         def other = new IdentityHashMap<Foo, String>()
         other.put(baz, "ccc")
         other.put(bax, "ddd")
+
+        when:
         map.putAll(other)
         System.gc()
 
@@ -153,15 +186,49 @@ public class WeakIdentityHashMapSpec extends Specification {
 
     def "keySet().clear()"() {
         when:
-        map.clear()
+        map.keySet().clear()
 
         then:
-        map.keySet().size() == 0
+        map.isEmpty()
+    }
+
+    def "keySet().contains()"() {
+        expect:
+        map.keySet().contains(foo)
+        !map.keySet().contains(nonExisting)
+    }
+
+    def "keySet() for each key"() {
+        when:
+        def keys = []
+        for (Foo key : map.keySet()) {
+            keys.add(key)
+        }
+
+        then:
+        keys.size() == 2
+        keys.contains(foo)
+        keys.contains(bar)
     }
 
     def "values"() {
         expect:
         map.values().sort() == ["aaa", "bbb"]
+    }
+
+    def "values().clear()"() {
+        when:
+        map.values().clear()
+
+        then:
+        map.isEmpty()
+    }
+
+    def "values().contains()"() {
+        expect:
+        map.values().contains("aaa")
+        map.values().contains("bbb")
+        !map.values().contains("non existing value")
     }
 
     def "clear"() {
@@ -178,7 +245,7 @@ public class WeakIdentityHashMapSpec extends Specification {
         expect:
         map.containsKey(foo)
         map.containsKey(bar)
-        !map.containsKey(new Foo())
+        !map.containsKey(nonExisting)
     }
 
     def "containsValue"() {
@@ -186,15 +253,30 @@ public class WeakIdentityHashMapSpec extends Specification {
         map.containsValue("aaa")
         !map.containsValue("ccc")
         !map.containsValue(foo)
+        !map.containsValue(null)
     }
 
-    def "remove"() {
+    def "containsValue() if null entry with null value exists"() {
+        setup:
+        map.put(null, null)
+
+        expect:
+        map.containsValue(null)
+    }
+
+    def "remove()"() {
         when:
         map.remove(foo)
 
         then:
         !map.containsKey(foo)
     }
+
+    def "remove(nonExisting)"() {
+        expect:
+        map.remove(nonExisting) == null
+    }
+
 
     def "put/get if null key exists"() {
         when:
@@ -217,12 +299,26 @@ public class WeakIdentityHashMapSpec extends Specification {
         map.put(foo, null)
 
         then:
+        map.containsKey(foo)
         map.containsValue(null)
     }
 
     def "null value when doesn't exist"() {
         expect:
         !map.containsValue(null)
+    }
+
+    def "entrySet()"() {
+        when:
+        def m = new IdentityHashMap<Foo, String>()
+        for (Map.Entry<Foo, String> entry : map.entrySet()) {
+            m.put(entry.key, entry.value)
+        }
+
+        then:
+        m.size() == 2
+        m.get(foo) == "aaa"
+        m.get(bar) == "bbb"
     }
 
     def "remove null key"() {
@@ -247,44 +343,116 @@ public class WeakIdentityHashMapSpec extends Specification {
         map.entrySet().size() == 0
     }
 
-    def "entrySet().remove(collection)"() {
-        when:
-        Set<Map.Entry<Foo, String>> set = map.entrySet()
-        set.removeAll(set);
+    def "entrySet().remove() for existing entry"() {
+        setup:
+        def entry = map.entrySet().iterator().next()
 
-        then:
-        map.entrySet().size() == 0
+        expect:
+        map.entrySet().remove(entry)
+        !map.entrySet().contains(entry)
     }
 
+    def "entrySet().remove() for non-existing entry"() {
+        expect:
+        !map.entrySet().remove(null)
+    }
 
-    def "Entry<>"() {
+    def "Entry<>#setValue()"() {
+        setup:
+        def entry = map.entrySet().iterator().next()
+        def value = entry.value
+
+        expect:
+        entry.setValue("new value") == value
+        entry.getValue() == "new value"
+    }
+
+    def "Iterator<>#remove()"() {
+        setup:
+        def iterator = map.entrySet().iterator()
+        def entry = iterator.next()
+
         when:
-        def m = new IdentityHashMap<Foo, String>()
-        for (Map.Entry<Foo, String> entry : map.entrySet()) {
-            m.put(entry.key, entry.value)
-        }
+        iterator.remove()
 
         then:
-        m.size() == 2
-        m.get(foo) == "aaa"
-        m.get(bar) == "bbb"
+        !map.entrySet().contains(entry)
+    }
+
+    def "Iterator<>#remove() twice"() {
+        setup:
+        def iterator = map.entrySet().iterator()
+
+        when:
+        iterator.remove()
+        iterator.remove()
+
+        then:
+        thrown IllegalStateException
+    }
+
+    def "Entry<>#equals()"() {
+        setup:
+        def entry = map.entrySet().iterator().next()
+
+        expect:
+        !entry.equals(null)
+        !entry.equals(foo)
     }
 
     def "hash conflicts"() {
-        when:
+        setup:
         def a = new ArrayList<Foo>()
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             def k = new Foo()
             map.put(k, "" + i)
             a.add(k)
         }
+
+        when:
         System.gc()
 
         then:
-        map.size() == 100002
+        map.size() == 10002
         for (Foo key : a) {
             map.containsKey(key)
         }
     }
 
+    def "removeAll() with hash conflicts"() {
+        setup:
+        def a = new ArrayList<Foo>()
+        for (int i = 0; i < 10000; i++) {
+            def k = new Foo()
+            map.put(k, "" + i)
+            a.add(k)
+        }
+
+        when:
+        map.keySet().removeAll(a)
+
+        then:
+        map.size() == 2
+        map.containsKey(foo)
+        map.containsKey(bar)
+    }
+
+    def "remove() with hash conflicts"() {
+        setup:
+        def a = new ArrayList<Foo>()
+        for (int i = 0; i < 10000; i++) {
+            def k = new Foo()
+            map.put(k, "" + i)
+            a.add(k)
+        }
+
+        when:
+        map.remove(foo)
+        map.remove(bar)
+
+        then:
+        map.size() == 10000
+        !map.containsKey(foo)
+        !map.containsKey(bar)
+    }
 }
