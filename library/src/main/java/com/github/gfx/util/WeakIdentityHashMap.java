@@ -87,14 +87,17 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             value = object;
         }
 
+        @Override
         public K getKey() {
             return super.get();
         }
 
+        @Override
         public V getValue() {
             return value;
         }
 
+        @Override
         public V setValue(V object) {
             V result = value;
             value = object;
@@ -124,7 +127,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         }
     }
 
-    class HashIterator<R> implements Iterator<R> {
+    private class HashIterator<R> implements Iterator<R> {
         private int position = 0, expectedModCount;
         private Entry<K, V> currentEntry, nextEntry;
         private K nextKey;
@@ -135,6 +138,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             expectedModCount = modCount;
         }
 
+        @Override
         public boolean hasNext() {
             if (nextEntry != null && (nextKey != null || nextEntry.isNull)) {
                 return true;
@@ -159,6 +163,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             }
         }
 
+        @Override
         public R next() {
             if (expectedModCount == modCount) {
                 if (hasNext()) {
@@ -174,6 +179,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             throw new ConcurrentModificationException();
         }
 
+        @Override
         public void remove() {
             if (expectedModCount == modCount) {
                 if (currentEntry != null) {
@@ -238,8 +244,8 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
      * @param map the mappings to add.
      */
     public WeakIdentityHashMap(Map<? extends K, ? extends V> map) {
-        this(map.size() < 6 ? 11 : map.size() * 2);
-        putAllImpl(map);
+        this(map.size() * 2);
+        putAll(map);
     }
 
     /**
@@ -595,10 +601,8 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
     }
 
     private void rehash() {
+        assert elementData.length > 0;
         int length = elementData.length * 2;
-        if (length == 0) {
-            length = 1;
-        }
         Entry<K, V>[] newData = newEntryArray(length);
         for (int i = 0; i < elementData.length; i++) {
             Entry<K, V> entry = elementData[i];
@@ -613,19 +617,6 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         }
         elementData = newData;
         computeMaxSize();
-    }
-
-    /**
-     * Copies all the mappings in the given map to this map. These mappings will
-     * replace all mappings that this map had for any of the keys currently in
-     * the given map.
-     *
-     * @param map the map to copy mappings from.
-     * @throws NullPointerException if {@code map} is {@code null}.
-     */
-    @Override
-    public void putAll(Map<? extends K, ? extends V> map) {
-        putAllImpl(map);
     }
 
     /**
@@ -676,11 +667,5 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
     public int size() {
         poll();
         return elementCount;
-    }
-
-    private void putAllImpl(Map<? extends K, ? extends V> map) {
-        if (map.entrySet() != null) {
-            super.putAll(map);
-        }
     }
 }
