@@ -35,15 +35,15 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
- * WeakIdentityHashMap is an implementation of Map with keys which are WeakReferences. A
+ * WeakIdentityHashMap is an implementation of IdentityHashMap with keys which are WeakReferences. A
  * key/value mapping is removed when the key is no longer referenced. All
  * optional operations (adding and removing) are supported. Keys and values can
  * be any objects. Note that the garbage collector acts similar to a second
  * thread on this collection, possibly removing keys.
  *
- * @since 1.2
- * @see WeakIdentityHashMap
- * @see WeakReference
+ * @see java.util.IdentityHashMap
+ * @see java.util.WeakHashMap
+ * @see java.lang.ref.WeakReference
  */
 public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     private static final int DEFAULT_SIZE = 16;
@@ -70,26 +70,31 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
     }
 
     private static final class Entry<K, V> extends WeakReference<K> implements
-        Map.Entry<K, V> {
+            Map.Entry<K, V> {
         final int hash;
         boolean isNull;
         V value;
         Entry<K, V> next;
+
         interface Type<R, K, V> {
             R get(Map.Entry<K, V> entry);
         }
+
         Entry(K key, V object, ReferenceQueue<K> queue) {
             super(key, queue);
             isNull = key == null;
             hash = isNull ? 0 : computeHashCode(key);
             value = object;
         }
+
         public K getKey() {
             return super.get();
         }
+
         public V getValue() {
             return value;
         }
+
         public V setValue(V object) {
             V result = value;
             value = object;
@@ -103,28 +108,33 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             }
             Map.Entry<?, ?> entry = (Map.Entry<?, ?>) other;
             Object key = super.get();
-            return (key ==  entry.getKey())
-                && (value == null ? value == entry.getValue() : value
-                .equals(entry.getValue()));
+            return (key == entry.getKey())
+                    && (value == null ? value == entry.getValue() : value
+                    .equals(entry.getValue()));
         }
+
         @Override
         public int hashCode() {
             return hash + (value == null ? 0 : value.hashCode());
         }
+
         @Override
         public String toString() {
             return super.get() + "=" + value;
         }
     }
+
     class HashIterator<R> implements Iterator<R> {
         private int position = 0, expectedModCount;
         private Entry<K, V> currentEntry, nextEntry;
         private K nextKey;
-        final Entry.Type<R, K, V> type;
+        private final Entry.Type<R, K, V> type;
+
         HashIterator(Entry.Type<R, K, V> type) {
             this.type = type;
             expectedModCount = modCount;
         }
+
         public boolean hasNext() {
             if (nextEntry != null && (nextKey != null || nextEntry.isNull)) {
                 return true;
@@ -148,6 +158,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
                 nextEntry = nextEntry.next;
             }
         }
+
         public R next() {
             if (expectedModCount == modCount) {
                 if (hasNext()) {
@@ -162,6 +173,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             }
             throw new ConcurrentModificationException();
         }
+
         public void remove() {
             if (expectedModCount == modCount) {
                 if (currentEntry != null) {
@@ -177,35 +189,33 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             }
         }
     }
+
     /**
      * Constructs a new empty {@code WeakIdentityHashMap} instance.
      */
     public WeakIdentityHashMap() {
         this(DEFAULT_SIZE);
     }
+
     /**
      * Constructs a new {@code WeakIdentityHashMap} instance with the specified
      * capacity.
      *
-     * @param capacity
-     *            the initial capacity of this map.
-     * @throws IllegalArgumentException
-     *                if the capacity is less than zero.
+     * @param capacity the initial capacity of this map.
+     * @throws IllegalArgumentException if the capacity is less than zero.
      */
     public WeakIdentityHashMap(int capacity) {
         this(capacity, DEFAULT_LOAD_FACTOR);
     }
+
     /**
      * Constructs a new {@code WeakIdentityHashMap} instance with the specified capacity
      * and load factor.
      *
-     * @param capacity
-     *            the initial capacity of this map.
-     * @param loadFactor
-     *            the initial load factor.
-     * @throws IllegalArgumentException
-     *             if the capacity is less than zero or the load factor is less
-     *             or equal to zero.
+     * @param capacity   the initial capacity of this map.
+     * @param loadFactor the initial load factor.
+     * @throws IllegalArgumentException if the capacity is less than zero or the load factor is less
+     *                                  or equal to zero.
      */
     public WeakIdentityHashMap(int capacity, float loadFactor) {
         if (capacity < 0) {
@@ -220,17 +230,18 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         computeMaxSize();
         referenceQueue = new ReferenceQueue<K>();
     }
+
     /**
      * Constructs a new {@code WeakIdentityHashMap} instance containing the mappings
      * from the specified map.
      *
-     * @param map
-     *            the mappings to add.
+     * @param map the mappings to add.
      */
     public WeakIdentityHashMap(Map<? extends K, ? extends V> map) {
         this(map.size() < 6 ? 11 : map.size() * 2);
         putAllImpl(map);
     }
+
     /**
      * Removes all mappings from this map, leaving it empty.
      *
@@ -248,21 +259,23 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             }
         }
     }
+
     private void computeMaxSize() {
         threshold = (int) ((long) elementData.length * loadFactor / 10000);
     }
+
     /**
      * Returns whether this map contains the specified key.
      *
-     * @param key
-     *            the key to search for.
+     * @param key the key to search for.
      * @return {@code true} if this map contains the specified key,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     @Override
     public boolean containsKey(Object key) {
         return getEntry(key) != null;
     }
+
     /**
      * Returns a set containing all of the mappings in this map. Each mapping is
      * an instance of {@link Map.Entry}. As the set is backed by this map,
@@ -279,24 +292,27 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             public int size() {
                 return WeakIdentityHashMap.this.size();
             }
+
             @Override
             public void clear() {
                 WeakIdentityHashMap.this.clear();
             }
+
             @Override
             public boolean remove(Object object) {
                 if (contains(object)) {
                     WeakIdentityHashMap.this
-                        .remove(((Map.Entry<?, ?>) object).getKey());
+                            .remove(((Map.Entry<?, ?>) object).getKey());
                     return true;
                 }
                 return false;
             }
+
             @Override
             public boolean contains(Object object) {
                 if (object instanceof Map.Entry) {
                     Entry<?, ?> entry = getEntry(((Map.Entry<?, ?>) object)
-                        .getKey());
+                            .getKey());
                     if (entry != null) {
                         Object key = entry.get();
                         if (key != null || entry.isNull) {
@@ -306,17 +322,19 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
                 }
                 return false;
             }
+
             @Override
             public Iterator<Map.Entry<K, V>> iterator() {
                 return new HashIterator<Map.Entry<K, V>>(
-                    new Entry.Type<Map.Entry<K, V>, K, V>() {
-                        public Map.Entry<K, V> get(Map.Entry<K, V> entry) {
-                            return entry;
-                        }
-                    });
+                        new Entry.Type<Map.Entry<K, V>, K, V>() {
+                            public Map.Entry<K, V> get(Map.Entry<K, V> entry) {
+                                return entry;
+                            }
+                        });
             }
         };
     }
+
     /**
      * Returns a set of the keys contained in this map. The set is backed by
      * this map so changes to one are reflected by the other. The set does not
@@ -333,14 +351,17 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
                 public boolean contains(Object object) {
                     return containsKey(object);
                 }
+
                 @Override
                 public int size() {
                     return WeakIdentityHashMap.this.size();
                 }
+
                 @Override
                 public void clear() {
                     WeakIdentityHashMap.this.clear();
                 }
+
                 @Override
                 public boolean remove(Object key) {
                     if (containsKey(key)) {
@@ -349,6 +370,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
                     }
                     return false;
                 }
+
                 @Override
                 public Iterator<K> iterator() {
                     return new HashIterator<K>(new Entry.Type<K, K, V>() {
@@ -361,23 +383,27 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         }
         return keySet;
     }
+
     /**
+     * <p>
      * Returns a collection of the values contained in this map. The collection
      * is backed by this map so changes to one are reflected by the other. The
      * collection supports remove, removeAll, retainAll and clear operations,
      * and it does not support add or addAll operations.
+     * </p>
      * <p>
      * This method returns a collection which is the subclass of
      * AbstractCollection. The iterator method of this subclass returns a
      * "wrapper object" over the iterator of map's entrySet(). The size method
      * wraps the map's size method and the contains method wraps the map's
      * containsValue method.
+     * </p>
      * <p>
      * The collection is created when this method is called at first time and
      * returned in response to all subsequent calls. This method may return
      * different Collection when multiple calls to this method, since it has no
      * synchronization performed.
-     *
+     * </p>
      * @return a collection of the values contained in this map.
      */
     @Override
@@ -389,14 +415,17 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
                 public int size() {
                     return WeakIdentityHashMap.this.size();
                 }
+
                 @Override
                 public void clear() {
                     WeakIdentityHashMap.this.clear();
                 }
+
                 @Override
                 public boolean contains(Object object) {
                     return containsValue(object);
                 }
+
                 @Override
                 public Iterator<V> iterator() {
                     return new HashIterator<V>(new Entry.Type<V, K, V>() {
@@ -409,13 +438,13 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         }
         return valuesCollection;
     }
+
     /**
      * Returns the value of the mapping with the specified key.
      *
-     * @param key
-     *            the key.
+     * @param key the key.
      * @return the value of the mapping with the specified key, or {@code null}
-     *         if no mapping for the specified key is found.
+     * if no mapping for the specified key is found.
      */
     @Override
     public V get(Object key) {
@@ -445,31 +474,31 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         }
         return null;
     }
+
     /**
      * Returns whether this map contains the specified value.
      *
-     * @param value
-     *            the value to search for.
+     * @param value the value to search for.
      * @return {@code true} if this map contains the specified value,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     @Override
     public boolean containsValue(Object value) {
         poll();
         if (value != null) {
-            for (int i = elementData.length; --i >= 0;) {
+            for (int i = elementData.length; --i >= 0; ) {
                 Entry<K, V> entry = elementData[i];
                 while (entry != null) {
                     K key = entry.get();
                     if ((key != null || entry.isNull)
-                        && value.equals(entry.value)) {
+                            && value.equals(entry.value)) {
                         return true;
                     }
                     entry = entry.next;
                 }
             }
         } else {
-            for (int i = elementData.length; --i >= 0;) {
+            for (int i = elementData.length; --i >= 0; ) {
                 Entry<K, V> entry = elementData[i];
                 while (entry != null) {
                     K key = entry.get();
@@ -482,6 +511,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         }
         return false;
     }
+
     /**
      * Returns the number of elements in this map.
      *
@@ -491,6 +521,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
     public boolean isEmpty() {
         return size() == 0;
     }
+
     @SuppressWarnings("unchecked")
     private void poll() {
         Entry<K, V> toRemove;
@@ -498,6 +529,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             removeEntry(toRemove);
         }
     }
+
     private void removeEntry(Entry<K, V> toRemove) {
         Entry<K, V> entry, last = null;
         int index = (toRemove.hash & 0x7FFFFFFF) % elementData.length;
@@ -519,15 +551,14 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             entry = entry.next;
         }
     }
+
     /**
      * Maps the specified key to the specified value.
      *
-     * @param key
-     *            the key.
-     * @param value
-     *            the value.
+     * @param key   the key.
+     * @param value the value.
      * @return the value of any previous mapping with the specified key or
-     *         {@code null} if there was no mapping.
+     * {@code null} if there was no mapping.
      */
     @Override
     public V put(K key, V value) {
@@ -551,7 +582,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             if (++elementCount > threshold) {
                 rehash();
                 index = key == null ? 0 : (computeHashCode(key) & 0x7FFFFFFF)
-                    % elementData.length;
+                        % elementData.length;
             }
             entry = new Entry<K, V>(key, value, referenceQueue);
             entry.next = elementData[index];
@@ -573,7 +604,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
             Entry<K, V> entry = elementData[i];
             while (entry != null) {
                 int index = entry.isNull ? 0 : (entry.hash & 0x7FFFFFFF)
-                    % length;
+                        % length;
                 Entry<K, V> next = entry.next;
                 entry.next = newData[index];
                 newData[index] = entry;
@@ -583,27 +614,26 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         elementData = newData;
         computeMaxSize();
     }
+
     /**
      * Copies all the mappings in the given map to this map. These mappings will
      * replace all mappings that this map had for any of the keys currently in
      * the given map.
      *
-     * @param map
-     *            the map to copy mappings from.
-     * @throws NullPointerException
-     *             if {@code map} is {@code null}.
+     * @param map the map to copy mappings from.
+     * @throws NullPointerException if {@code map} is {@code null}.
      */
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
         putAllImpl(map);
     }
+
     /**
      * Removes the mapping with the specified key from this map.
      *
-     * @param key
-     *            the key of the mapping to remove.
+     * @param key the key of the mapping to remove.
      * @return the value of the removed mapping or {@code null} if no mapping
-     *         for the specified key was found.
+     * for the specified key was found.
      */
     @Override
     public V remove(Object key) {
@@ -636,6 +666,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         }
         return null;
     }
+
     /**
      * Returns the number of elements in this map.
      *
@@ -646,6 +677,7 @@ public class WeakIdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<
         poll();
         return elementCount;
     }
+
     private void putAllImpl(Map<? extends K, ? extends V> map) {
         if (map.entrySet() != null) {
             super.putAll(map);
