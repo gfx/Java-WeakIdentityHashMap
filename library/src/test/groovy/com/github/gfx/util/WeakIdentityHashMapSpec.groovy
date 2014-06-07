@@ -22,6 +22,11 @@ public class WeakIdentityHashMapSpec extends Specification {
         int hashCode() {
             return value
         }
+
+        @Override
+        String toString() {
+            return "Foo{$value}"
+        }
     }
 
     Map<Foo, String> emptyMap
@@ -409,6 +414,15 @@ public class WeakIdentityHashMapSpec extends Specification {
         expect:
         !entry.equals(null)
         !entry.equals(foo)
+    }
+
+    def "Entry<>#toString()"() {
+        setup:
+        map = new WeakIdentityHashMap<>([ (foo) : "value" ])
+        def entry = map.entrySet().iterator().next()
+
+        expect:
+        entry.toString() == "Foo{10}=value"
     }
 
     def "hash conflicts"() {
