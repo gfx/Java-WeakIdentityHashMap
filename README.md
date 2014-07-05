@@ -19,6 +19,8 @@ WeakIdentityHashMap<Activity, String> foo = new WeakIdentityHashMap<>()
  // Set an activity's field.
  // If activity is gone, this value is also gone, too.
 foo.put(activity, "my field");
+
+String value = foo.get(activity); // "my field"
 ```
 
 ## TEST COVERAGES
